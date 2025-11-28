@@ -1,35 +1,63 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+"use client";
+
+import { useState } from "react";
 
 export default function JoinPage() {
-  const [name, setName] = useState('');
-  const [teamId, setTeamId] = useState('');
-  const [teams, setTeams] = useState<any[]>([]);
+  const [name, setName] = useState("");
+  const [team, setTeam] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    async function loadTeams() {
-      const { data } = await supabase.from('teams').select('*').order('name');
-      setTeams(data || []);
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const res = await fetch("/api/join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, team }),
+    });
+
+    const data = await res.json();
+    setLoading(false);
+
+    if (!res.ok) {
+      setError(data.error);
+      return;
     }
-    loadTeams();
-  }, []);
 
-  async function submit() {
-    if (!name || !teamId) return alert('name and team required');
-    await supabase.from('players').insert([{ name, team_id: teamId }]);
-    window.location.href = '/';
+    // redirect to player page using returned id
+    window.location.href = `/player/${data.playerId}`;
   }
 
   return (
-    <main className="p-8 max-w-md mx-auto">
+    <main className="p-6 max-w-md mx-auto">
       <h1 className="text-2xl font-bold mb-4">Join the Game</h1>
-      <input className="w-full p-2 border rounded mb-3" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} />
-      <select className="w-full p-2 border rounded mb-3" value={teamId} onChange={e => setTeamId(e.target.value)}>
-        <option value=''>Select team</option>
-        {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-      </select>
-      <button className="w-full bg-blue-600 text-white p-2 rounded" onClick={submit}>Join</button>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <p className="text-red-600">{error}</p>}
+        <input
+          type="text"
+          placeholder="Your Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="border p-2 w-full"
+        />
+        <input
+          type="text"
+          placeholder="Team Name"
+          value={team}
+          onChange={(e) => setTeam(e.target.value)}
+          className="border p-2 w-full"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white py-2 rounded"
+        >
+          {loading ? "Joining…" : "Join"}
+        </button>
+      </form>
     </main>
   );
 }

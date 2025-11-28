@@ -8,5 +8,11 @@
     "dev": "pnpm -C web dev",
     "build": "pnpm -C web build",
     "start": "pnpm -C web start"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^3.0.0"
   }
 }
