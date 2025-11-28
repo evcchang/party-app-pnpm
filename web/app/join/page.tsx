@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { TEAMS } from "../constants/teams";
 
 export default function JoinPage() {
   const [name, setName] = useState("");
-  const [team, setTeam] = useState("");
+  const [team, setTeam] = useState(TEAMS[0].name);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -27,7 +28,6 @@ export default function JoinPage() {
       return;
     }
 
-    // redirect to player page using returned id
     window.location.href = `/player/${data.playerId}`;
   }
 
@@ -36,20 +36,31 @@ export default function JoinPage() {
       <h1 className="text-2xl font-bold mb-4">Join the Game</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <p className="text-red-600">{error}</p>}
+
+        {/* NAME INPUT */}
         <input
           type="text"
           placeholder="Your Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="border p-2 w-full"
+          required
         />
-        <input
-          type="text"
-          placeholder="Team Name"
+
+        {/* TEAM DROPDOWN */}
+        <select
           value={team}
           onChange={(e) => setTeam(e.target.value)}
           className="border p-2 w-full"
-        />
+        >
+          {TEAMS.map((t) => (
+            <option key={t.name} value={t.name}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+
+        {/* SUBMIT BUTTON */}
         <button
           type="submit"
           disabled={loading}
