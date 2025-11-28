@@ -14,35 +14,43 @@ export default function Scoreboard() {
   const [scores, setScores] = useState<TeamScore[]>([]);
   const [loading, setLoading] = useState(true);
 
+  async function loadScores() {
+    setLoading(true);
+
+    const { data } = await supabase
+      .from("players")
+      .select("team, points");
+
+    const totals = new Map<string, number>();
+
+    (data ?? []).forEach((p) => {
+      totals.set(p.team, (totals.get(p.team) ?? 0) + p.points);
+    });
+
+    const aggregated = Array.from(totals.entries())
+      .map(([team, points]) => ({ team, points }))
+      .sort((a, b) => b.points - a.points);
+
+    setScores(aggregated);
+    setLoading(false);
+  }
+
   useEffect(() => {
-    async function loadScores() {
-      setLoading(true);
-
-      const { data } = await supabase
-        .from("players")
-        .select("team, points");
-
-      const totals = new Map<string, number>();
-      (data ?? []).forEach((p) => {
-        totals.set(p.team, (totals.get(p.team) ?? 0) + p.points);
-      });
-
-      const aggregated = Array.from(totals.entries())
-        .map(([team, points]) => ({ team, points }))
-        .sort((a, b) => b.points - a.points); // highest → lowest
-
-      setScores(aggregated);
-      setLoading(false);
-    }
-
     loadScores();
 
+    // ⭐ STRONGER REALTIME SUBSCRIPTION ⭐
     const channel = supabase
-      .channel("scoreboard-grid")
+      .channel("scoreboard-realtime")
       .on(
         "postgres_changes",
-        { schema: "public", table: "players" },
-        () => loadScores()
+        {
+          event: "*",                // <— important: react to INSERT/UPDATE/DELETE
+          schema: "public",
+          table: "players",
+        },
+        async () => {
+          await loadScores();        // reload totals on ANY change
+        }
       )
       .subscribe();
 
@@ -53,6 +61,7 @@ export default function Scoreboard() {
 
   if (loading) return <p>Loading scoreboard…</p>;
 
+  // You can adjust maxPoints or compute based on leader
   const maxPoints = 100;
 
   return (
@@ -61,7 +70,6 @@ export default function Scoreboard() {
         Live Scoreboard
       </h2>
 
-      {/* Grid container with 1–3 columns depending on screen */}
       <div
         className="
           grid 
@@ -73,21 +81,20 @@ export default function Scoreboard() {
         "
       >
         {scores.map((teamData, index) => (
-            <div
-                key={teamData.team}
-                className="relative flex flex-col items-center w-full pt-6"
-            >
-            {/* Crown for the leader */}
+          <div
+            key={teamData.team}
+            className="relative flex flex-col items-center w-full pt-6"
+          >
+            {/* Leader Crown */}
             {index === 0 && (
-                <Crown
-                    size={32}
-                    color="gold"
-                    className="absolute -top-1"
-                />
+              <Crown
+                size={32}
+                color="gold"
+                className="absolute -top-1"
+              />
             )}
 
-
-            {/* Team Name (above hourglass) */}
+            {/* Team Name */}
             <div className="text-xl font-semibold mb-2">
               {teamData.team}
             </div>
@@ -100,7 +107,7 @@ export default function Scoreboard() {
               isLeader={index === 0}
             />
 
-            {/* Points (below hourglass) */}
+            {/* Team Points */}
             <div className="text-lg font-bold mt-2">
               {teamData.points} pts
             </div>

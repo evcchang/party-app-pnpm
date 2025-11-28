@@ -70,6 +70,15 @@ export default function AdminDashboard() {
     setPlayers((playersData || []) as Player[]);
   }
 
+  async function startJeopardy() {
+    await fetch("/api/game/mode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "jeopardy" }),
+    });
+    window.location.href = "/admin/jeopardy";
+  }
+
   if (loading) {
     return <main className="p-6">Loading…</main>;
   }
@@ -79,6 +88,13 @@ export default function AdminDashboard() {
       <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
 
       {error && <p className="text-red-600 mb-4">{error}</p>}
+
+      <button
+        onClick={startJeopardy}
+        className="mt-4 px-4 py-2 bg-purple-600 text-white rounded"
+      >
+        Start Jeopardy
+      </button>
 
       <table className="table-auto border-collapse border border-gray-300 w-full">
         <thead>

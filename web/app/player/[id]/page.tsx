@@ -5,6 +5,8 @@ import Link from "next/link";
 import Scoreboard from "../../components/Scoreboard";
 import { supabase } from "../../../lib/supabaseClient";
 import { getTeamColor } from "../../../lib/getTeamColor";
+import { useRouter } from "next/navigation";
+import { usePlayerGameModeRedirect } from "../../hooks/usePlayerGameModeRedirect";
 
 type Player = {
   id: string;
@@ -15,8 +17,11 @@ type Player = {
 
 export default function PlayerDashboard({ params }: { params: { id: string } }) {
   const playerId = params.id;
+  const router = useRouter();
   const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
+
+  usePlayerGameModeRedirect(playerId, "normal");
 
   useEffect(() => {
     async function loadPlayer() {
