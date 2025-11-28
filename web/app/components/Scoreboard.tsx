@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import Hourglass from "./Hourglass";
+import Crown from "./Crown";
 
 type TeamScore = {
   team: string;
@@ -72,10 +73,20 @@ export default function Scoreboard() {
         "
       >
         {scores.map((teamData, index) => (
-          <div
-            key={teamData.team}
-            className="flex flex-col items-center w-full"
-          >
+            <div
+                key={teamData.team}
+                className="relative flex flex-col items-center w-full pt-6"
+            >
+            {/* Crown for the leader */}
+            {index === 0 && (
+                <Crown
+                    size={32}
+                    color="gold"
+                    className="absolute -top-1"
+                />
+            )}
+
+
             {/* Team Name (above hourglass) */}
             <div className="text-xl font-semibold mb-2">
               {teamData.team}

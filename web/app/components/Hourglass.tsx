@@ -18,9 +18,7 @@ export default function Hourglass({
 
   return (
     <div
-      className={`flex flex-col items-center gap-2 w-40 ${
-        isLeader ? "drop-shadow-[0_0_18px_gold] brightness-125" : ""
-      }`}
+        className="flex flex-col items-center gap-2 w-40"
     >
       <span className="font-semibold">{team}</span>
 
