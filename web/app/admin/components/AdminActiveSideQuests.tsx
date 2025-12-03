@@ -3,8 +3,23 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 
+type ActiveQuestRow = {
+    id: string;
+    assigned_at: string;
+    player: {
+      id: string;
+      name: string;
+      team: string;
+    };
+    quest: {
+      id: string;
+      prompt: string;
+      points: number;
+    };
+  };
+
 export default function AdminActiveSideQuests() {
-  const [rows, setRows] = useState([]);
+  const [rows, setRows] = useState<ActiveQuestRow[]>([]);
 
   async function load() {
     const { data } = await supabase
@@ -17,7 +32,15 @@ export default function AdminActiveSideQuests() {
       `)
       .eq("active", true);
 
-    setRows(data ?? []);
+    // Supabase returns nested arrays for relationships, flatten them:
+    const cleaned = (data ?? []).map((r: any) => ({
+      id: r.id,
+      assigned_at: r.assigned_at,
+      player: Array.isArray(r.player) ? r.player[0] : r.player,
+      quest: Array.isArray(r.quest) ? r.quest[0] : r.quest,
+    }));
+
+    setRows(cleaned);
   }
 
   async function complete(id: string, playerId: string, points: number) {
