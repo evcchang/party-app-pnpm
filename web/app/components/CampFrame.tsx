@@ -61,27 +61,6 @@ export default function CampFrame({ children }: { children: React.ReactNode }) {
       />
     </div>
 
-
-    {/* -------------------- MOBILE BANNER ONLY -------------------- */}
-    <div
-      className="
-        block md:hidden
-        w-full
-        z-0 pointer-events-none
-      "
-    >
-      <img
-        src="/camp/TopBanner.svg"
-        alt="Camp Banner"
-        className="
-          w-full              /* Full width banner */
-          aspect-[4/1]
-          object-cover
-        "
-        style={{ height: "160px" }}
-      />
-    </div>
-
       {/* -------------------- MAIN CONTENT (NARROWER THAN FRAME) -------------------- */}
       <main
         className="
