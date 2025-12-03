@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { usePlayerGameModeRedirect } from "../../../hooks/usePlayerGameModeRedirect";
+import CampFrame from "../../../components/CampFrame";
 
 type Question = {
   id: string;
@@ -104,30 +105,32 @@ export default function PlayerJeopardyPage() {
   }
 
   return (
-    <main className="p-6 max-w-md mx-auto text-center space-y-6">
-      <h1 className="text-2xl font-bold">Jeopardy Buzzer</h1>
-      {question ? (
-        <>
-          <p className="text-sm text-gray-600">
-            {question.category} – {question.value}
-          </p>
-          <p className="font-semibold mt-2">{question.question}</p>
-        </>
-      ) : (
-        <p>Waiting for the next question…</p>
-      )}
+    <CampFrame>
+      <main className="p-6 max-w-md mx-auto text-center space-y-6">
+        <h1 className="text-2xl font-bold">Jeopardy Buzzer</h1>
+        {question ? (
+          <>
+            <p className="text-sm text-gray-600">
+              {question.category} – {question.value}
+            </p>
+            <p className="font-semibold mt-2">{question.question}</p>
+          </>
+        ) : (
+          <p>Waiting for the next question…</p>
+        )}
 
-      <button
-        onClick={handleBuzz}
-        disabled={!question || buzzed}
-        className={`w-full h-32 rounded-full text-2xl font-bold ${
-          buzzed
-            ? "bg-gray-400 text-gray-800"
-            : "bg-red-600 text-white active:bg-red-800"
-        }`}
-      >
-        {buzzed ? "Buzzed!" : "BUZZ"}
-      </button>
-    </main>
+        <button
+          onClick={handleBuzz}
+          disabled={!question || buzzed}
+          className={`w-full h-32 rounded-full text-2xl font-bold ${
+            buzzed
+              ? "bg-gray-400 text-gray-800"
+              : "bg-red-600 text-white active:bg-red-800"
+          }`}
+        >
+          {buzzed ? "Buzzed!" : "BUZZ"}
+        </button>
+      </main>
+    </CampFrame>
   );
 }

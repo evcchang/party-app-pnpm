@@ -7,6 +7,7 @@ import { supabase } from "../../../lib/supabaseClient";
 import { getTeamColor } from "../../../lib/getTeamColor";
 import { useRouter } from "next/navigation";
 import { usePlayerGameModeRedirect } from "../../hooks/usePlayerGameModeRedirect";
+import CampFrame from "../../components/CampFrame";
 
 type Player = {
   id: string;
@@ -62,55 +63,67 @@ export default function PlayerDashboard({ params }: { params: { id: string } }) 
     };
   }, [playerId]);
 
-  if (loading) return <main className="p-6">Loading player…</main>;
+  if (loading) {
+    return (
+      <CampFrame>
+        <main className="p-6 max-w-3xl mx-auto pt-[200px]">
+          Loading player…
+        </main>
+      </CampFrame>
+    );
+  }  
 
   if (!player) {
     return (
-      <main className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Player not found</h1>
-        <Link href="/join" className="text-blue-600 underline">
-          Join the game
-        </Link>
-      </main>
+      <CampFrame>
+        <main className="p-6">
+          <h1 className="text-2xl font-bold mb-4">Player not found</h1>
+          <Link href="/join" className="text-blue-600 underline">
+            Join the game
+          </Link>
+        </main>
+      </CampFrame>
     );
   }
 
   return (
-    <main className="p-6 max-w-3xl mx-auto space-y-6">
+    <CampFrame>
+      <main className="p-6 max-w-3xl mx-auto space-y-6">
 
-      {/* Personal Player Panel */}
-      <section className="p-4 bg-white rounded shadow space-y-2">
-        <h1 className="text-3xl font-bold">Welcome, {player.name}!</h1>
-        <div className="flex items-center gap-2">
-          <span>Team:</span>
-          <span
-            className="px-3 py-1 rounded-full text-white text-sm font-semibold"
-            style={{ backgroundColor: getTeamColor(player.team) }}
+        {/* Personal Player Panel */}
+        <section className="p-4 bg-white rounded shadow space-y-2">
+          <h1 className="text-3xl font-bold">Welcome, {player.name}!</h1>
+          <div className="flex items-center gap-2">
+            <span>Team:</span>
+            <span
+              className="px-3 py-1 rounded-full text-white text-sm font-semibold"
+              style={{ backgroundColor: getTeamColor(player.team) }}
+            >
+              {player.team}
+            </span>
+          </div>
+          <p className="text-xl font-semibold">Your Points: {player.points}</p>
+        </section>
+
+        {/* Live Scoreboard underneath */}
+        <Scoreboard />
+
+        {/* Navigation */}
+        <section className="space-x-4">
+          <Link
+            href="/"
+            className="inline-block px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
           >
-            {player.team}
-          </span>
-        </div>
-        <p className="text-xl font-semibold">Your Points: {player.points}</p>
-      </section>
-
-      {/* Live Scoreboard underneath */}
-      <Scoreboard />
-
-      {/* Navigation */}
-      <section className="space-x-4">
-        <Link
-          href="/"
-          className="inline-block px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-        >
-          Back to Scoreboard Only
-        </Link>
-        <Link
-          href="/join"
-          className="inline-block px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          Switch Player
-        </Link>
-      </section>
-    </main>
+            Back to Scoreboard Only
+          </Link>
+          <Link
+            href="/join"
+            className="inline-block px-4 py-2 bg-blue-600 text-white rounded"
+          >
+            Switch Player
+          </Link>
+        </section>
+      </main>
+    </CampFrame>
   );
 }
