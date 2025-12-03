@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import CampFrame from "../components/CampFrame";
+import Link from "next/link";
+import Scoreboard from "../components/Scoreboard";
+import AdminActiveSideQuests from "./components/AdminActiveSideQuests";
 import { supabase } from "../../lib/supabaseClient";
 
 type Player = {
@@ -12,123 +15,95 @@ type Player = {
 };
 
 export default function AdminDashboard() {
-  const [loading, setLoading] = useState(true);
   const [players, setPlayers] = useState<Player[]>([]);
-  const [error, setError] = useState("");
-  const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function checkAuthAndLoad() {
-      // 1. Check if there is a session
-      const { data, error } = await supabase.auth.getSession();
+  async function loadPlayers() {
+    setLoading(true);
 
-      if (error || !data.session) {
-        // Not logged in: go to admin login page
-        router.replace("/admin/login");
-        return;
-      }
-
-      // 2. Load players
-      const { data: playersData, error: playersError } = await supabase
-        .from("players")
-        .select("*")
-        .order("team", { ascending: true });
-
-      if (playersError) {
-        setError(playersError.message);
-      } else {
-        setPlayers(playersData as Player[]);
-      }
-
-      setLoading(false);
-    }
-
-    checkAuthAndLoad();
-  }, [router]);
-
-  async function changePoints(playerId: string, delta: number) {
-    setError("");
-
-    const res = await fetch("/api/points", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ playerId, delta }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error || "Failed to update points");
-      return;
-    }
-
-    // Refresh players list
-    const { data: playersData } = await supabase
+    const { data } = await supabase
       .from("players")
       .select("*")
-      .order("team", { ascending: true });
+      .order("points", { ascending: false });
 
-    setPlayers((playersData || []) as Player[]);
+    setPlayers(data ?? []);
+    setLoading(false);
   }
 
-  async function startJeopardy() {
-    await fetch("/api/game/mode", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "jeopardy" }),
-    });
-    window.location.href = "/admin/jeopardy";
-  }
+  useEffect(() => {
+    loadPlayers();
 
-  if (loading) {
-    return <main className="p-6">Loading…</main>;
-  }
+    // Subscribe to live player score updates
+    const channel = supabase
+      .channel("players-admin")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "players" },
+        () => loadPlayers()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   return (
-    <main className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
+    <CampFrame>
+      <main className="p-6 space-y-10 max-w-5xl mx-auto">
+        <header className="flex justify-between items-center">
+          <h1 className="text-4xl font-extrabold">Admin Dashboard</h1>
+          <Link
+            href="/"
+            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+          >
+            Back Home
+          </Link>
+        </header>
 
-      {error && <p className="text-red-600 mb-4">{error}</p>}
+        {/* 🔥 NEW FEATURE: ACTIVE SIDE QUESTS TABLE */}
+        <AdminActiveSideQuests />
 
-      <button
-        onClick={startJeopardy}
-        className="mt-4 px-4 py-2 bg-purple-600 text-white rounded"
-      >
-        Start Jeopardy
-      </button>
+        {/* Existing Scoreboard */}
+        <section>
+          <h2 className="text-2xl font-bold mb-3">Scoreboard</h2>
+          <Scoreboard />
+        </section>
 
-      <table className="table-auto border-collapse border border-gray-300 w-full">
-        <thead>
-          <tr>
-            <th className="border px-2 py-1">Name</th>
-            <th className="border px-2 py-1">Team</th>
-            <th className="border px-2 py-1">Points</th>
-            <th className="border px-2 py-1">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {players.map((p) => (
-            <tr key={p.id}>
-              <td className="border px-2 py-1">{p.name}</td>
-              <td className="border px-2 py-1">{p.team}</td>
-              <td className="border px-2 py-1">{p.points}</td>
-              <td className="border px-2 py-1">
-                <button
-                  onClick={() => changePoints(p.id, 1)}
-                  className="bg-green-600 text-white px-2 py-1 rounded mr-1"
-                >
-                  +1
-                </button>
-                <button
-                  onClick={() => changePoints(p.id, -1)}
-                  className="bg-red-600 text-white px-2 py-1 rounded"
-                >
-                  -1
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </main>
+        {/* Manage Players */}
+        <section className="bg-white rounded shadow p-4 space-y-4">
+          <h2 className="text-2xl font-bold">Players</h2>
+
+          {loading && <p>Loading players…</p>}
+
+          {!loading && players.length === 0 && (
+            <p>No players have joined yet.</p>
+          )}
+
+          {!loading && players.length > 0 && (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2">Name</th>
+                  <th className="text-left py-2">Team</th>
+                  <th className="text-left py-2">Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                {players.map((player) => (
+                  <tr key={player.id} className="border-b">
+                    <td className="py-2">{player.name}</td>
+                    <td className="py-2">{player.team}</td>
+                    <td className="py-2">{player.points}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        {/* Add more admin tools here later */}
+      </main>
+    </CampFrame>
   );
 }
