@@ -75,6 +75,7 @@ export default function CampFrame({ children }: { children: React.ReactNode }) {
         alt="Camp Banner"
         className="
           w-full              /* Full width banner */
+          aspect-[4/1]
           object-cover
         "
         style={{ height: "160px" }}
