@@ -10,6 +10,8 @@ import JeopardyBoard from "./components/JeopardyBoard";
 import BuzzOrderPublic from "./components/BuzzOrderPublic";
 
 import "./globals.css";
+import FamilyFeudBoardPublic from "./components/FamilyFeudBoardPublic";
+import { FeudRound, FeudAnswer } from "@/app/types/familyFeud";
 
 type GameStateRow = {
   game_mode: string;
@@ -37,6 +39,8 @@ export default function HomePage() {
   const [gameState, setGameState] = useState<GameStateRow | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [feudRound, setFeudRound] = useState<FeudRound | null>(null);
+  const [feudAnswers, setFeudAnswers] = useState<FeudAnswer[]>([]);  
 
   // NEW: live buzzer state
   const [buzzes, setBuzzes] = useState<Buzz[]>([]);
@@ -74,6 +78,27 @@ export default function HomePage() {
             .order("created_at", { ascending: true });
 
           setBuzzes((bz || []) as Buzz[]);
+        }
+      }
+
+      if (state?.game_mode === "familyfeud") {
+        // Load the active round
+        const { data: round } = await supabase
+          .from("family_feud_rounds")
+          .select("*")
+          .eq("active", true)
+          .maybeSingle();
+      
+        setFeudRound(round || null);
+      
+        if (round) {
+          const { data: answers } = await supabase
+            .from("family_feud_answers")
+            .select("*")
+            .eq("round_id", round.id)
+            .order("points", { ascending: false });
+      
+          setFeudAnswers((answers || []) as FeudAnswer[]);
         }
       }
     }
@@ -118,7 +143,31 @@ export default function HomePage() {
               setCurrentQuestion(null);
               setBuzzes([]);
             }
-          } else {
+          } else if (newState.game_mode === "familyfeud") {
+            const { data: round } = await supabase
+              .from("family_feud_rounds")
+              .select("*")
+              .eq("active", true)
+              .maybeSingle();
+          
+            setFeudRound(round || null);
+          
+            if (round) {
+              const { data: answers } = await supabase
+                .from("family_feud_answers")
+                .select("*")
+                .eq("round_id", round.id)
+                .order("points", { ascending: false });
+          
+              setFeudAnswers((answers || []) as FeudAnswer[]);
+            }
+          
+            // Clear jeopardy UI
+            setCurrentQuestion(null);
+            setQuestions([]);
+            setBuzzes([]);
+          }
+          else {
             // Normal mode turns everything off
             setCurrentQuestion(null);
             setBuzzes([]);
@@ -163,6 +212,45 @@ export default function HomePage() {
   }, [gameState?.selected_question]);
 
   const mode = gameState?.game_mode ?? "normal";
+
+  useEffect(() => {
+    if (mode !== "familyfeud" || !feudRound) return;
+  
+    const channel = supabase
+      .channel("family-feud-updates")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "family_feud_rounds" },
+        async () => {
+          // Reload the round info
+          const { data: round } = await supabase
+            .from("family_feud_rounds")
+            .select("*")
+            .eq("id", feudRound.id)
+            .maybeSingle();
+  
+          setFeudRound(round);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "family_feud_answers" },
+        async () => {
+          const { data: answers } = await supabase
+            .from("family_feud_answers")
+            .select("*")
+            .eq("round_id", feudRound.id)
+            .order("points", { ascending: false });
+  
+          setFeudAnswers((answers || []) as FeudAnswer[]);
+        }
+      )
+      .subscribe();
+  
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [mode, feudRound]);  
 
   return (
     <CampFrame>
@@ -224,6 +312,28 @@ export default function HomePage() {
             </div>
   
             {/* NEW SECTION: SCOREBOARD BELOW */}
+            <div className="mt-10">
+              <h2 className="text-xl font-bold mb-4">Scoreboard</h2>
+              <Scoreboard />
+            </div>
+          </>
+        )}
+
+        {mode === "familyfeud" && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* BOARD */}
+              <div className="md:col-span-2">
+                <FamilyFeudBoardPublic round={feudRound} answers={feudAnswers} />
+              </div>
+
+              {/* BUZZ ORDER */}
+              <div className="md:col-span-1">
+                <BuzzOrderPublic buzzes={buzzes} />
+              </div>
+            </div>
+
+            {/* SCOREBOARD */}
             <div className="mt-10">
               <h2 className="text-xl font-bold mb-4">Scoreboard</h2>
               <Scoreboard />

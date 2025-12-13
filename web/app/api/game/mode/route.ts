@@ -11,7 +11,7 @@ export async function POST(req: Request) {
 
   console.log("Requested mode:", mode);
 
-  if (!mode || !["normal", "jeopardy"].includes(mode)) {
+  if (!mode || !["normal", "jeopardy", "familyfeud"].includes(mode)) {
     console.error("Invalid mode:", mode);
     return NextResponse.json({ error: "Invalid mode" }, { status: 400 });
   }
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   }
 
   if (mode === "normal") {
-    // Reset all questions to unused
+    // Reset all jeopardy questions to unused
     const { error: resetError } = await supabase
       .from("jeopardy_questions")
       .update({ used: false })

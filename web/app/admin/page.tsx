@@ -76,6 +76,16 @@ export default function AdminDashboard() {
     window.location.href = "/admin/jeopardy";
   }
 
+  async function startFamilyFeud() {
+    await fetch("/api/game/mode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "familyfeud" }),
+    });
+  
+    window.location.href = "/admin/familyfeud";
+  }
+
   if (loading) {
     return <main className="p-6">Loading…</main>;
   }
@@ -92,6 +102,14 @@ export default function AdminDashboard() {
       >
         Start Jeopardy
       </button>
+
+      <button
+        onClick={startFamilyFeud}
+        className="mt-4 px-4 py-2 bg-red-600 text-white rounded"
+      >
+        Start Family Feud
+      </button>
+
 
       {/* ⭐ NEW: Active Side Quests Panel */}
       <div className="mt-8 mb-6">
