@@ -46,6 +46,11 @@ export function usePlayerGameModeRedirect(
             return;
           }
 
+          // Family Feud mode
+          if (state.game_mode === "familyfeud") {
+            router.push(`/player/${playerId}/family-feud`);
+          }
+
           // If Normal game mode
           if (state.game_mode === "normal") {
             router.replace(`/player/${playerId}`);

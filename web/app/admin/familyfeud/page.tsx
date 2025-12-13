@@ -8,9 +8,32 @@ export default function AdminFamilyFeudPage() {
   const [round, setRound] = useState<FeudRound | null>(null);
   const [answers, setAnswers] = useState<FeudAnswer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [teams, setTeams] = useState<string[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<string>("");
 
-  // Load active round
+  //
+  // LOAD TEAMS
+  //
+  useEffect(() => {
+    async function loadTeams() {
+      const { data, error } = await supabase
+        .from("players")
+        .select("team");
+
+      if (!error && data) {
+        const uniqueTeams = [...new Set(data.map((p) => p.team).filter(Boolean))];
+        setTeams(uniqueTeams);
+      }
+    }
+    loadTeams();
+  }, []);
+
+  //
+  // LOAD ACTIVE ROUND & ANSWERS
+  //
   async function loadRound() {
+    setLoading(true);
+
     const { data: r } = await supabase
       .from("family_feud_rounds")
       .select("*")
@@ -27,84 +50,147 @@ export default function AdminFamilyFeudPage() {
         .order("points", { ascending: false });
 
       setAnswers(ans || []);
+    } else {
+      setAnswers([]);
     }
+
     setLoading(false);
   }
 
+  //
   // END FAMILY FEUD MODE
+  //
   async function endFamilyFeud() {
-    // 1. Reset game mode to normal
     await supabase
-    .from("game_state")
-    .update({ game_mode: "normal", selected_question: null })
-    .eq("id", "global");
+      .from("game_state")
+      .update({ game_mode: "normal", selected_question: null })
+      .eq("id", "global");
 
-    // 2. Deactivate all feud rounds
     await supabase
-    .from("family_feud_rounds")
-    .update({ active: false })
-    .eq("active", true);
+      .from("family_feud_rounds")
+      .update({ active: false, strikes: 0 })
+      .gte("strikes", 0);
 
-    // 3. Clear buzzes
+    await supabase.from("buzzes").delete().gte("created_at", "1900-01-01");
+
     await supabase
-    .from("buzzes")
-    .delete()
-    .neq("id", "-1"); // delete all rows
+      .from("family_feud_answers")
+      .update({ revealed: false })
+      .gte("points", 0);
 
-    // Optional: redirect admin back to dashboard
     window.location.href = "/admin";
   }
-  
 
+  //
+  // CLEAR BUZZES — NEW BUTTON
+  //
+  async function clearBuzzes() {
+    const { error } = await supabase
+      .from("buzzes")
+      .delete()
+      .gte("created_at", "1900-01-01");
+
+    if (error) console.error("Clear buzzes error:", error);
+
+    window.location.reload();
+  }
+
+  //
+  // NEXT ROUND
+  //
+  async function nextRound() {
+    const { data: current } = await supabase
+      .from("family_feud_rounds")
+      .select("*")
+      .eq("active", true)
+      .maybeSingle();
+
+    const { data: inactive } = await supabase
+      .from("family_feud_rounds")
+      .select("*")
+      .eq("active", false);
+
+    if (!inactive || inactive.length === 0) {
+      alert("No inactive rounds available!");
+      return;
+    }
+
+    const next = inactive[Math.floor(Math.random() * inactive.length)];
+
+    if (current) {
+      await supabase
+        .from("family_feud_rounds")
+        .update({ active: false })
+        .eq("id", current.id);
+    }
+
+    await supabase
+      .from("family_feud_rounds")
+      .update({ active: true, strikes: 0 })
+      .eq("id", next.id);
+
+    await supabase.from("buzzes").delete().gte("created_at", "1900-01-01");
+
+    window.location.reload();
+  }
+
+  //
+  // ACTIONS
+  //
+  async function revealAnswer(id: string) {
+    await fetch("/api/family-feud/reveal-answer", {
+      method: "POST",
+      body: JSON.stringify({ answerId: id }),
+    });
+
+    window.location.reload();
+  }
+
+  async function addStrike(roundId: string) {
+    await fetch("/api/family-feud/add-strike", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ roundId }),
+    });
+
+    window.location.reload();
+  }
+
+  async function awardPoints(roundId: string, teamId: string) {
+    await fetch("/api/family-feud/award-points", {
+      method: "POST",
+      body: JSON.stringify({ roundId, teamId }),
+    });
+  }
+
+  //
+  // SUBSCRIPTIONS
+  //
   useEffect(() => {
     loadRound();
 
     const channel = supabase
-        .channel("admin-familyfeud")
-        .on(
+      .channel("admin-familyfeud")
+      .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "family_feud_rounds" },
         () => loadRound()
-        )
-        .on(
+      )
+      .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "family_feud_answers" },
         () => loadRound()
-        )
-        .subscribe();
+      )
+      .subscribe();
 
     return () => {
-        supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, []);
 
-  // Reveal an answer
-  async function revealAnswer(id: string) {
-    await supabase
-      .from("family_feud_answers")
-      .update({ revealed: true })
-      .eq("id", id);
-  }
-
-  // Add a strike
-  async function addStrike() {
-    if (!round) return;
-
-    await supabase
-      .from("family_feud_rounds")
-      .update({ strikes: round.strikes + 1 })
-      .eq("id", round.id);
-  }
-
-  // Award points to a team (using existing API)
-  async function awardPoints(team: string, points: number) {
-    await fetch("/api/points", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ team, delta: points }),
-    });
-  }
-
+  //
+  // RENDER
+  //
   if (loading) return <main className="p-6">Loading…</main>;
 
   if (!round)
@@ -127,25 +213,30 @@ export default function AdminFamilyFeudPage() {
       <section>
         <h3 className="text-lg font-bold mb-2">Answers</h3>
 
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 gap-4 max-w-xl mx-auto">
           {answers.map((ans) => (
-            <button
+            <div
               key={ans.id}
-              onClick={() => revealAnswer(ans.id)}
-              disabled={ans.revealed}
-              className={`p-4 rounded text-white text-lg flex justify-between ${
-                ans.revealed ? "bg-green-700" : "bg-blue-800"
-              }`}
+              className="bg-blue-900 text-white p-4 rounded text-xl flex items-center justify-between"
             >
-              {ans.revealed ? (
-                <>
-                  <span>{ans.answer}</span>
-                  <span>{ans.points}</span>
-                </>
+              <div className="flex flex-col">
+                <span className="font-semibold">{ans.answer}</span>
+                <span className="text-sm opacity-80">{ans.points} points</span>
+              </div>
+
+              {!ans.revealed ? (
+                <button
+                  onClick={() => revealAnswer(ans.id)}
+                  className="bg-yellow-400 text-black px-3 py-1 rounded text-sm font-bold hover:bg-yellow-300"
+                >
+                  Reveal
+                </button>
               ) : (
-                <span>Reveal Answer</span>
+                <span className="bg-green-600 px-3 py-1 rounded text-sm font-semibold">
+                  Revealed
+                </span>
               )}
-            </button>
+            </div>
           ))}
         </div>
       </section>
@@ -167,37 +258,60 @@ export default function AdminFamilyFeudPage() {
           ))}
         </div>
 
-        <button
-          onClick={addStrike}
-          className="px-6 py-3 bg-red-700 text-white rounded text-lg"
-        >
+        <button onClick={() => addStrike(round.id)}>
           Add Strike
+        </button>
+
+        {/* NEW: CLEAR BUZZES BUTTON */}
+        <button
+          onClick={clearBuzzes}
+          className="ml-4 bg-red-700 text-white px-3 py-1 rounded hover:bg-red-600"
+        >
+          Clear Buzzes
         </button>
       </section>
 
-      {/* Award Points */}
+      {/* AWARD POINTS */}
       <section>
         <h3 className="text-lg font-bold mb-2">Award Points</h3>
 
-        <div className="flex space-x-2">
-          {["Red", "Blue", "Green", "Yellow", "Orange"].map((team) => (
-            <button
-              key={team}
-              onClick={() => awardPoints(team, 10)}
-              className="px-4 py-2 bg-purple-600 text-white rounded"
-            >
-              {team} +10
-            </button>
+        <select onChange={(e) => setSelectedTeam(e.target.value)}>
+          <option value="">Select team</option>
+          {teams.map((team) => (
+            <option key={team} value={team}>
+              {team}
+            </option>
           ))}
-        </div>
+        </select>
       </section>
 
+      <section>
+        <button
+          disabled={!selectedTeam}
+          onClick={() => awardPoints(round.id, selectedTeam)}
+          className="px-6 py-3 bg-gray-700 hover:bg-gray-800 text-white rounded text-lg"
+        >
+          Award Points to {selectedTeam}
+        </button>
+      </section>
+
+      {/* NEXT ROUND */}
+      <section>
+        <button
+          onClick={nextRound}
+          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-500"
+        >
+          Next Round
+        </button>
+      </section>
+
+      {/* END GAME */}
       <section className="mt-8">
         <button
-            onClick={endFamilyFeud}
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-800 text-white rounded text-lg"
+          onClick={endFamilyFeud}
+          className="px-6 py-3 bg-gray-700 hover:bg-gray-800 text-white rounded text-lg"
         >
-            End Family Feud Mode
+          End Family Feud Mode
         </button>
       </section>
     </main>

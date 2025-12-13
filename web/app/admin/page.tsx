@@ -77,14 +77,44 @@ export default function AdminDashboard() {
   }
 
   async function startFamilyFeud() {
-    await fetch("/api/game/mode", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "familyfeud" }),
-    });
+    // 1. Set game mode to family feud
+    const { error: modeErr } = await supabase
+      .from("game_state")
+      .update({ game_mode: "familyfeud", selected_question: null })
+      .eq("id", "global");
   
+    if (modeErr) {
+      console.error("Failed to set game mode:", modeErr);
+      return;
+    }
+  
+    // 2. Fetch all feud rounds
+    const { data: rounds, error: loadErr } = await supabase
+      .from("family_feud_rounds")
+      .select("*");
+  
+    if (loadErr || !rounds || rounds.length === 0) {
+      console.error("No rounds available:", loadErr);
+      return;
+    }
+  
+    // 3. Pick a random round
+    const randomRound = rounds[Math.floor(Math.random() * rounds.length)];
+  
+    // 4. Activate the random round and reset strikes
+    const { error: activateErr } = await supabase
+      .from("family_feud_rounds")
+      .update({ active: true, strikes: 0 })
+      .eq("id", randomRound.id);
+  
+    if (activateErr) {
+      console.error("Failed to activate random round:", activateErr);
+      return;
+    }
+  
+    // 5. Redirect to feud dashboard or reload UI
     window.location.href = "/admin/familyfeud";
-  }
+  }  
 
   if (loading) {
     return <main className="p-6">Loading…</main>;
