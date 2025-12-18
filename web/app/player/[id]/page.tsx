@@ -6,7 +6,7 @@ import Scoreboard from "../../components/Scoreboard";
 import { supabase } from "../../../lib/supabaseClient";
 import { getTeamColor } from "../../../lib/getTeamColor";
 import { usePlayerGameModeRedirect } from "../../hooks/usePlayerGameModeRedirect";
-import CampFrame from "../../components/CampFrame";
+import SnowFrame from "@/app/components/SnowFrame";
 
 function formatDuration(start: string, end: string) {
   const ms = new Date(end).getTime() - new Date(start).getTime();
@@ -180,35 +180,39 @@ export default function PlayerDashboard({
 
   if (loading) {
     return (
-      <CampFrame>
+      <SnowFrame density={60}>
         <main className="p-6 max-w-3xl mx-auto pt-[200px]">
           Loading player…
         </main>
-      </CampFrame>
+      </SnowFrame>
     );
   }
 
   if (!player) {
     return (
-      <CampFrame>
+      <SnowFrame density={60}>
         <main className="p-6">
           <h1 className="text-2xl font-bold mb-4">Player not found</h1>
           <Link href="/join" className="text-blue-600 underline">
             Join the game
           </Link>
         </main>
-      </CampFrame>
+      </SnowFrame>
     );
   }
 
   return (
-    <CampFrame>
+    <SnowFrame density={60}>
       <main className="p-6 max-w-3xl mx-auto space-y-6">
+
         {/* Personal Player Panel */}
-        <section className="p-4 bg-white rounded shadow space-y-2">
-          <h1 className="text-3xl font-bold">Welcome, {player.name}!</h1>
+        <section className="p-4 bg-white text-black rounded shadow space-y-2">
+          <h1 className="text-3xl font-bold">
+            Welcome, {player.name}!
+          </h1>
+
           <div className="flex items-center gap-2">
-            <span>Team:</span>
+            <span className="font-medium">Team:</span>
             <span
               className="px-3 py-1 rounded-full text-white text-sm font-semibold"
               style={{ backgroundColor: getTeamColor(player.team) }}
@@ -216,30 +220,35 @@ export default function PlayerDashboard({
               {player.team}
             </span>
           </div>
+
           <p className="text-xl font-semibold">
             Your Points: {player.points}
           </p>
         </section>
 
-        {/* Live Scoreboard underneath */}
-        <Scoreboard />
+        {/* Live Scoreboard */}
+        <section className="bg-white text-black rounded shadow p-4">
+          <Scoreboard />
+        </section>
 
         {/* Navigation */}
-        <section className="space-x-4">
+        <section className="flex gap-4">
           <Link
             href="/"
-            className="inline-block px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+            className="inline-block px-4 py-2 bg-white text-black rounded shadow hover:bg-gray-100"
           >
             Back to Scoreboard Only
           </Link>
+
           <Link
             href="/join"
-            className="inline-block px-4 py-2 bg-blue-600 text-white rounded"
+            className="inline-block px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-500"
           >
             Switch Player
           </Link>
         </section>
+
       </main>
-    </CampFrame>
+    </SnowFrame>
   );
 }

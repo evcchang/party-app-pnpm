@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabaseClient";
 
-import CampFrame from "./components/CampFrame";
 import Scoreboard from "./components/Scoreboard";
 import JeopardyBoard from "./components/JeopardyBoard";
 import BuzzOrderPublic from "./components/BuzzOrderPublic";
@@ -12,6 +11,7 @@ import BuzzOrderPublic from "./components/BuzzOrderPublic";
 import "./globals.css";
 import FamilyFeudBoardPublic from "./components/FamilyFeudBoardPublic";
 import { FeudRound, FeudAnswer } from "@/app/types/familyFeud";
+import SnowFrame from "./components/SnowFrame";
 
 type GameStateRow = {
   game_mode: string;
@@ -306,7 +306,7 @@ export default function HomePage() {
   // RENDER
   //
   return (
-    <CampFrame>
+    <SnowFrame density={60}>
       <main className="p-6 max-w-6xl mx-auto space-y-6">
         <header className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Party Game</h1>
@@ -409,6 +409,6 @@ export default function HomePage() {
           </Link>
         </div>
       </main>
-    </CampFrame>
+    </SnowFrame>
   );
 }

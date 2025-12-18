@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "../../../../lib/supabaseClient";
-import CampFrame from "../../../components/CampFrame";
 import FamilyFeudBoardPublic from "../../../components/FamilyFeudBoardPublic";
 import { FeudRound, FeudAnswer } from "@/app/types/familyFeud";
 import { usePlayerGameModeRedirect } from "../../../hooks/usePlayerGameModeRedirect";
+import SnowFrame from "@/app/components/SnowFrame";
 
 export default function PlayerFamilyFeudPage() {
   const params = useParams();
@@ -127,7 +127,7 @@ export default function PlayerFamilyFeudPage() {
   }
 
   return (
-    <CampFrame>
+    <SnowFrame density={60}>
       <main className="p-6 max-w-md mx-auto space-y-6 text-center">
         <h1 className="text-2xl font-bold">Family Feud</h1>
 
@@ -147,6 +147,6 @@ export default function PlayerFamilyFeudPage() {
           {buzzed ? "Buzzed!" : "BUZZ"}
         </button>
       </main>
-    </CampFrame>
+    </SnowFrame>
   );
 }

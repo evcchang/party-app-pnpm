@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { usePlayerGameModeRedirect } from "../../../hooks/usePlayerGameModeRedirect";
-import CampFrame from "../../../components/CampFrame";
+import SnowFrame from "@/app/components/SnowFrame";
 
 type Question = {
   id: string;
@@ -105,7 +105,7 @@ export default function PlayerJeopardyPage() {
   }
 
   return (
-    <CampFrame>
+    <SnowFrame density={60}>
       <main className="p-6 max-w-md mx-auto text-center space-y-6">
         <h1 className="text-2xl font-bold">Jeopardy Buzzer</h1>
         {question ? (
@@ -131,6 +131,6 @@ export default function PlayerJeopardyPage() {
           {buzzed ? "Buzzed!" : "BUZZ"}
         </button>
       </main>
-    </CampFrame>
+    </SnowFrame>
   );
 }

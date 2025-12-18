@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { TEAMS } from "../constants/teams";
-import CampFrame from "../components/CampFrame";
+import SnowFrame from "../components/SnowFrame";
 
 export default function JoinPage() {
   const [name, setName] = useState("");
@@ -33,45 +33,48 @@ export default function JoinPage() {
   }
 
   return (
-    <CampFrame>
+    <SnowFrame density={60}>
       <main className="p-6 max-w-md mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Join the Game</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <p className="text-red-600">{error}</p>}
+        <div className="bg-white text-black rounded-lg shadow-xl p-6">
+          <h1 className="text-2xl font-bold mb-4">Join the Game</h1>
 
-          {/* NAME INPUT */}
-          <input
-            type="text"
-            placeholder="Your Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="border p-2 w-full"
-            required
-          />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <p className="text-red-600">{error}</p>}
 
-          {/* TEAM DROPDOWN */}
-          <select
-            value={team}
-            onChange={(e) => setTeam(e.target.value)}
-            className="border p-2 w-full"
-          >
-            {TEAMS.map((t) => (
-              <option key={t.name} value={t.name}>
-                {t.name}
-              </option>
-            ))}
-          </select>
+            {/* NAME INPUT */}
+            <input
+              type="text"
+              placeholder="Your Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="border p-2 w-full rounded"
+              required
+            />
 
-          {/* SUBMIT BUTTON */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded"
-          >
-            {loading ? "Joining…" : "Join"}
-          </button>
-        </form>
+            {/* TEAM DROPDOWN */}
+            <select
+              value={team}
+              onChange={(e) => setTeam(e.target.value)}
+              className="border p-2 w-full rounded"
+            >
+              {TEAMS.map((t) => (
+                <option key={t.name} value={t.name}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+
+            {/* SUBMIT BUTTON */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-2 rounded"
+            >
+              {loading ? "Joining…" : "Join"}
+            </button>
+          </form>
+        </div>
       </main>
-    </CampFrame>
+    </SnowFrame>
   );
 }
