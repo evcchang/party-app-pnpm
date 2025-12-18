@@ -141,10 +141,10 @@ export default function AdminDashboard() {
       </button>
 
 
-      {/* ⭐ NEW: Active Side Quests Panel */}
+      {/* ⭐ NEW: Active Side Quests Panel
       <div className="mt-8 mb-6">
         <AdminActiveSideQuests />
-      </div>
+      </div> */}
 
       <table className="table-auto border-collapse border border-gray-300 w-full">
         <thead>

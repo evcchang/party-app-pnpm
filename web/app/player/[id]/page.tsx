@@ -50,17 +50,17 @@ export default function PlayerDashboard({
   const [history, setHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadHistory() {
-      setHistoryLoading(true);
-      const res = await fetch(`/api/side-quest/history?playerId=${playerId}`);
-      const data = await res.json();
-      if (res.ok) setHistory(data.history || []);
-      setHistoryLoading(false);
-    }
+  // useEffect(() => {
+  //   async function loadHistory() {
+  //     setHistoryLoading(true);
+  //     const res = await fetch(`/api/side-quest/history?playerId=${playerId}`);
+  //     const data = await res.json();
+  //     if (res.ok) setHistory(data.history || []);
+  //     setHistoryLoading(false);
+  //   }
 
-    loadHistory();
-  }, [playerId]);
+  //   loadHistory();
+  // }, [playerId]);
 
   usePlayerGameModeRedirect(playerId, "normal");
 
@@ -109,74 +109,74 @@ export default function PlayerDashboard({
     };
   }, [playerId]);
 
-  // Load / auto-assign side quest
-  useEffect(() => {
-    async function loadSideQuest() {
-      setSideQuestLoading(true);
-      setSideQuestError(null);
+  // // Load / auto-assign side quest
+  // useEffect(() => {
+  //   async function loadSideQuest() {
+  //     setSideQuestLoading(true);
+  //     setSideQuestError(null);
 
-      try {
-        const res = await fetch(`/api/side-quest?playerId=${playerId}`);
-        const data = await res.json();
+  //     try {
+  //       const res = await fetch(`/api/side-quest?playerId=${playerId}`);
+  //       const data = await res.json();
 
-        if (!res.ok) {
-          throw new Error(data.error ?? "Failed to load side quest");
-        }
+  //       if (!res.ok) {
+  //         throw new Error(data.error ?? "Failed to load side quest");
+  //       }
 
-        setSideQuest(data.sideQuest);
-      } catch (err: any) {
-        console.error(err);
-        setSideQuestError(err.message ?? "Failed to load side quest");
-      } finally {
-        setSideQuestLoading(false);
-      }
-    }
+  //       setSideQuest(data.sideQuest);
+  //     } catch (err: any) {
+  //       console.error(err);
+  //       setSideQuestError(err.message ?? "Failed to load side quest");
+  //     } finally {
+  //       setSideQuestLoading(false);
+  //     }
+  //   }
 
-    loadSideQuest();
-  }, [playerId]);
+  //   loadSideQuest();
+  // }, [playerId]);
 
-  async function handleSideQuestAction(action: "complete" | "switch") {
-    if (!player) return;
+  // async function handleSideQuestAction(action: "complete" | "switch") {
+  //   if (!player) return;
 
-    setSideQuestActionLoading(true);
-    setSideQuestError(null);
+  //   setSideQuestActionLoading(true);
+  //   setSideQuestError(null);
 
-    try {
-      const res = await fetch("/api/side-quest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerId: player.id, action }),
-      });
+  //   try {
+  //     const res = await fetch("/api/side-quest", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ playerId: player.id, action }),
+  //     });
 
-      const data = await res.json();
+  //     const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error ?? "Failed to update side quest");
-      }
+  //     if (!res.ok) {
+  //       throw new Error(data.error ?? "Failed to update side quest");
+  //     }
 
-      setSideQuest(data.sideQuest);
-    } catch (err: any) {
-      console.error(err);
-      setSideQuestError(err.message ?? "Failed to update side quest");
-    } finally {
-      setSideQuestActionLoading(false);
-    }
-  }
+  //     setSideQuest(data.sideQuest);
+  //   } catch (err: any) {
+  //     console.error(err);
+  //     setSideQuestError(err.message ?? "Failed to update side quest");
+  //   } finally {
+  //     setSideQuestActionLoading(false);
+  //   }
+  // }
 
-  const minutesSinceAssigned = (() => {
-    if (!sideQuest?.assignedAt) return 0;
-    const assignedTs = new Date(sideQuest.assignedAt).getTime();
-    const diffMs = now - assignedTs;
-    return diffMs > 0 ? diffMs / 60000 : 0;
-  })();
+  // const minutesSinceAssigned = (() => {
+  //   if (!sideQuest?.assignedAt) return 0;
+  //   const assignedTs = new Date(sideQuest.assignedAt).getTime();
+  //   const diffMs = now - assignedTs;
+  //   return diffMs > 0 ? diffMs / 60000 : 0;
+  // })();
 
-  const canSwitch =
-    !!sideQuest && minutesSinceAssigned >= SWITCH_COOLDOWN_MINUTES;
+  // const canSwitch =
+  //   !!sideQuest && minutesSinceAssigned >= SWITCH_COOLDOWN_MINUTES;
 
-  const minutesLeftToSwitch = Math.max(
-    0,
-    Math.ceil(SWITCH_COOLDOWN_MINUTES - minutesSinceAssigned)
-  );
+  // const minutesLeftToSwitch = Math.max(
+  //   0,
+  //   Math.ceil(SWITCH_COOLDOWN_MINUTES - minutesSinceAssigned)
+  // );
 
   if (loading) {
     return (
@@ -221,110 +221,8 @@ export default function PlayerDashboard({
           </p>
         </section>
 
-        {/* Side Quest Panel */}
-        <section className="p-4 bg-yellow-50 rounded shadow border border-yellow-200 space-y-4 relative">
-
-          {/* Header Row */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <h2 className="text-2xl font-bold">Your Side Quest</h2>
-
-            {/* Points badge */}
-            {sideQuest && (
-              <span className="text-sm font-semibold text-yellow-900 bg-yellow-200 px-3 py-1 rounded self-start sm:self-auto">
-                Worth {sideQuest.points} point{sideQuest.points === 1 ? "" : "s"}
-              </span>
-            )}
-          </div>
-
-          {sideQuestLoading && <p>Assigning a side quest…</p>}
-
-          {!sideQuestLoading && !sideQuest && (
-            <p>No side quests are currently available.</p>
-          )}
-
-          {!sideQuestLoading && sideQuest && (
-            <div className="space-y-3">
-              {/* Quest prompt */}
-              <p className="text-lg leading-snug">{sideQuest.prompt}</p>
-
-              {/* Buttons + Timestamp */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-2">
-
-                {/* Switch Button */}
-                <button
-                  type="button"
-                  onClick={() => handleSideQuestAction("switch")}
-                  disabled={sideQuestActionLoading || !canSwitch}
-                  className="px-4 py-2 rounded bg-gray-700 text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed w-full sm:w-auto"
-                >
-                  {canSwitch
-                    ? "Switch Side Quest"
-                    : `Switch available in ${minutesLeftToSwitch} min`}
-                </button>
-
-                {/* Timestamp */}
-                <span className="text-xs text-gray-700 sm:mt-0 mt-1">
-                  Assigned{" "}
-                  {new Date(sideQuest.assignedAt).toLocaleTimeString([], {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Mobile-friendly bottom blurb */}
-          <div className="text-xs text-yellow-900 opacity-80 text-center sm:text-right pt-2 border-t border-yellow-200">
-            Notify a host when you complete a side quest<br />
-            to get your points awarded.
-          </div>
-
-        </section>
-
         {/* Live Scoreboard underneath */}
         <Scoreboard />
-
-        {/* Completed Side Quest History */}
-        <section className="p-4 bg-white rounded shadow border space-y-3">
-          <h2 className="text-2xl font-bold">Completed Side Quests</h2>
-
-          {historyLoading && <p>Loading history…</p>}
-
-          {!historyLoading && history.length === 0 && (
-            <p className="text-gray-600">You haven’t completed any side quests yet.</p>
-          )}
-
-          {!historyLoading && history.length > 0 && (
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="border-b bg-gray-100">
-                  <th className="text-left py-2 px-2">Quest</th>
-                  <th className="text-left py-2 px-2">Points</th>
-                  <th className="text-left py-2 px-2">Completed</th>
-                  <th className="text-left py-2 px-2">Duration</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((h) => (
-                  <tr key={h.id} className="border-b">
-                    <td className="py-2 px-2">{h.quest.prompt}</td>
-                    <td className="py-2 px-2">{h.quest.points}</td>
-                    <td className="py-2 px-2">
-                      {new Date(h.completed_at).toLocaleTimeString([], {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td className="py-2 px-2">
-                      {formatDuration(h.assigned_at, h.completed_at)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
 
         {/* Navigation */}
         <section className="space-x-4">
